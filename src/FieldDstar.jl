@@ -69,6 +69,15 @@ function PointGrid(w::Int, h::Int)
     return PointGrid(nodes, w, h)
 end
 
+function collide(idx::Index)
+    if 10 < idx.x && idx.x < 20
+        if 10 < idx.y && idx.y < 20
+            return true
+        end
+    end
+    return false
+end
+
 function neighbouring_indexes(pg::PointGrid, idx::Index)
     @debugassert idx.x > 0
     @debugassert idx.y > 0
@@ -78,9 +87,9 @@ function neighbouring_indexes(pg::PointGrid, idx::Index)
     Channel() do c # like python's generator
         for i in max(idx.x-1, 1):min(idx.x+1, pg.w)
             for j in max(idx.y-1, 1):min(idx.y+1, pg.h)
-                if !(i==idx.x && j==idx.y)
-                    put!(c, Index(i, j))
-                end
+                (i==idx.x && j==idx.y) && continue
+                collide(Index(i, j)) && continue
+                put!(c, Index(i, j))
             end
         end
     end
@@ -117,8 +126,7 @@ end
 function compute_shortest_path(dstar::DstarSearch; debug_visual=false)
     function predicate_continue()
         s_start = dstar.s_start
-        minval = minimum(pair.second for pair in dstar.open_list.xs)
-        minval < KeyVal(s_start, s_start, EuclideanHeuristic()) && (return true)
+
         s_start.g != s_start.rhs && (return true)
         return false
     end
