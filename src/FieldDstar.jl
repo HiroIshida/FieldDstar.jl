@@ -5,6 +5,7 @@ using DataStructures
 using LinearAlgebra
 
 export PointGrid, Node, DstarSearch, Index, compute_shortest_path
+export get_node, neighbouring_nodes
 
 
 macro debugassert(test)
@@ -72,15 +73,17 @@ function PointGrid(w::Int, h::Int)
 end
 
 function neighbouring_indexes(pg::PointGrid, idx::Index)
-    @debugassert idx[1] > 0
-    @debugassert idx[2] > 0
-    @debugassert idx[1] <= pg.w
-    @debugassert idx[2] <= pg.h
+    @debugassert idx.x > 0
+    @debugassert idx.y > 0
+    @debugassert idx.x <= pg.w
+    @debugassert idx.y <= pg.h
 
     Channel() do c # like python's generator
-        for i in max(idx[1], 1):min(idx[1], pg.w)
-            for j in max(idx[2], 1):min(idx[2], pg.w)
-                put!(c, Index(i, j))
+        for i in max(idx.x-1, 1):min(idx.x+1, pg.w)
+            for j in max(idx.y-1, 1):min(idx.y+1, pg.h)
+                if i!=idx.x && j!=idx.y
+                    put!(c, Index(i, j))
+                end
             end
         end
     end
@@ -109,7 +112,7 @@ end
 function neighbouring_nodes(dstar::DstarSearch, node::Node)
     Channel() do c # like a python generator
         for idx_neigh in neighbouring_indexes(dstar.pgrid, node.idx)
-            put!(c, get_node(dstar, idx_neigh)A)
+            put!(c, get_node(dstar, idx_neigh))
         end
     end
 end
@@ -118,19 +121,21 @@ function compute_shortest_path(dstar::DstarSearch)
     function predicate_continue()
         s_start = dstar.s_start
         minval = minimum(pair.second for pair in dstar.open_list.xs)
-        cond1 = minval < KeyVal(s_start, s_start, EuclideanHeuristic())
-        cond2 = s_start.g == s_start.rhs
-        return (cond1 || cond2)
+        minval < KeyVal(s_start, s_start, EuclideanHeuristic()) && (return true)
+        s_start.g != s_start.rhs && (return true)
+        return false
     end
 
     while predicate_continue()
         s = dequeue!(dstar.open_list)
         if s.g > s.rhs
             s.g = s.rhs
-            (update_state(n) for n in neighbouring_nodes())
+            for s_ in neighbouring_nodes(dstar, s)
+                update_state(dstar, s_)
+            end
         else
             s.g = Inf
-            (update_state(n) for n in neighbouring_nodes())
+            (update_state(s_) for s_ in neighbouring_nodes(dstar, s))
             update_state(s)
         end
     end
@@ -142,8 +147,8 @@ function update_state(dstar::DstarSearch, s::Node)
         f(s_::Node) = euclidean_distance(s, s_) + s_.g
         s.rhs = minimum(f(s_) for s_ in nbrs)
     end
-    haskey(dstar.open_list, s) && delete(dstar.open_list, s)
-    s.g != s.rhs && enqueue!(dstar.open_list, s)
+    haskey(dstar.open_list, s) && delete!(dstar.open_list, s)
+    s.g != s.rhs && enqueue!(dstar.open_list, s, KeyVal(s, dstar.s_start, EuclideanHeuristic()))
 end
 
 end # module
