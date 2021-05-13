@@ -3,9 +3,11 @@ module FieldDstar
 using StaticArrays
 using DataStructures
 using LinearAlgebra
+using Plots
+gr()
 
 export PointGrid, Node, DstarSearch, Index, compute_shortest_path
-export get_node, neighbouring_nodes
+export get_node, neighbouring_nodes, visualize
 
 
 macro debugassert(test)
@@ -117,7 +119,7 @@ function neighbouring_nodes(dstar::DstarSearch, node::Node)
     end
 end
 
-function compute_shortest_path(dstar::DstarSearch)
+function compute_shortest_path(dstar::DstarSearch; debug_visual=false)
     function predicate_continue()
         s_start = dstar.s_start
         minval = minimum(pair.second for pair in dstar.open_list.xs)
@@ -138,6 +140,7 @@ function compute_shortest_path(dstar::DstarSearch)
             (update_state(s_) for s_ in neighbouring_nodes(dstar, s))
             update_state(s)
         end
+        debug_visual && visualize(dstar)
     end
 end
 
@@ -149,6 +152,22 @@ function update_state(dstar::DstarSearch, s::Node)
     end
     haskey(dstar.open_list, s) && delete!(dstar.open_list, s)
     s.g != s.rhs && enqueue!(dstar.open_list, s, KeyVal(s, dstar.s_start, EuclideanHeuristic()))
+end
+
+function visualize(dstar::DstarSearch)
+    gs = []
+    for i in 1:dstar.pgrid.w
+        for j in 1:dstar.pgrid.h
+            if dstar.nodes[i][j].g == Inf
+                push!(gs, 0.0)
+            else
+                push!(gs, dstar.nodes[i][j].g)
+            end
+        end
+    end
+    xs = 1:dstar.pgrid.w
+    ys = 1:dstar.pgrid.h
+    GR.heatmap(xs, ys, reshape(gs, dstar.pgrid.w, dstar.pgrid.h))
 end
 
 end # module
