@@ -52,11 +52,6 @@ function KeyVal(node_here::Node, node_start::Node, h::Heuristic)
     return KeyVal(first, second)
 end
 
-struct KeyValOrdering <: Base.Order.Ordering end
-import Base.Order.lt
-function lt(o::KeyValOrdering, a::KeyVal, b::KeyVal)
-    return true
-end
 function Base.isless(x::KeyVal, y::KeyVal)
     # see end of p. 10 of the paper
     x.first < y.first && (return true)
@@ -102,7 +97,7 @@ end
 
 function DstarSearch(idx_start::Index, idx_goal::Index, pgrid::PointGrid)
     nodes = [[Node(Index(i, j)) for j in 1:pgrid.h] for i in 1:pgrid.w]
-    open_list = PriorityQueue{Node, KeyVal}(KeyValOrdering())
+    open_list = PriorityQueue{Node, KeyVal}()
     s_start = nodes[idx_start.x][idx_start.y]
     s_goal = nodes[idx_goal.x][idx_goal.y]
     key = nodes[idx_goal.x][idx_goal.y]
