@@ -1,0 +1,9 @@
+name = "FieldDstar"
+uuid = "33716d28-1182-44e6-a02a-ba13c3f9998c"
+authors = ["HiroIshida <spitfire.docomo@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
