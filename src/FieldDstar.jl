@@ -81,7 +81,7 @@ function neighbouring_indexes(pg::PointGrid, idx::Index)
     Channel() do c # like python's generator
         for i in max(idx.x-1, 1):min(idx.x+1, pg.w)
             for j in max(idx.y-1, 1):min(idx.y+1, pg.h)
-                if i!=idx.x && j!=idx.y
+                if !(i==idx.x && j==idx.y)
                     put!(c, Index(i, j))
                 end
             end
