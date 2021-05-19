@@ -26,10 +26,13 @@ function neighbouring_index_pairs(pg::PointGrid, idx::Index)
     is_valid_pair = (i, j) -> (valid_bools[i] & valid_bools[j])
 
     Channel() do c
-        for i in 1:7
+        for i in [3, 5, 7]
+            is_valid_pair(i, i-1) && put!(c, (S[i], S[i-1]))
             is_valid_pair(i, i+1) && put!(c, (S[i], S[i+1]))
         end
-        is_valid_pair(7, 1) && put!(c, (S[7], S[1]))
+        # corner case
+        is_valid_pair(1, 7) && put!(c, (S[1], S[7]))
+        is_valid_pair(1, 2) && put!(c, (S[1], S[2]))
     end
 end
 
@@ -42,3 +45,8 @@ function neighbouring_node_pairs(dstar::DstarSearch, node::Node)
         end
     end
 end
+
+function copmute_pair_rhs(dstar::DstarSearch, pair::Tuple{Node, 2})
+end
+
+
