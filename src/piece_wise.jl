@@ -23,7 +23,10 @@ function compute_pair_ahead_rhs(s::Node, pair::NodePair)
     return c * sqrt(2.0) + g2
 end
 
-function neighbouring_index_pairs(pg::PointGrid, idx::Index)
+function neighbouring_node_pairs(dstar::DstarSearch, node::Node)
+    pg = dstar.pgrid
+    idx = node.idx
+
     x_min = max(idx.x-1, 1)
     x_max = min(idx.x+1, pg.w)
     y_min = max(idx.y-1, 1)
@@ -50,23 +53,23 @@ function neighbouring_index_pairs(pg::PointGrid, idx::Index)
     valid_bools = [inRange(idx) & !pg.pred_coll(idx) for idx in S]
     is_valid_pair = (i, j) -> (valid_bools[i] & valid_bools[j])
 
-    Channel() do c
-        for i in [3, 5, 7]
-            is_valid_pair(i, i-1) && put!(c, (S[i], S[i-1]))
-            is_valid_pair(i, i+1) && put!(c, (S[i], S[i+1]))
+    function add_node_pair(vec::Vector{NodePair}, i, j)
+        is_valid_pair = valid_bools[i] & valid_bools[j]
+        if is_valid_pair
+            node1 = get_node(dstar, S[i])
+            node2 = get_node(dstar, S[j])
+            push!(vec, NodePair(node1, node2))
         end
-        # corner case
-        is_valid_pair(1, 7) && put!(c, (S[1], S[7]))
-        is_valid_pair(1, 2) && put!(c, (S[1], S[2]))
     end
-end
 
-function neighbouring_node_pairs(dstar::DstarSearch, node::Node)
-    Channel() do c
-        for idx_pair in neighbouring_index_pairs(dstar.pgrid, node.idx)
-            s1 = get_node(dstar, idx_pair[1])
-            s2 = get_node(dstar, idx_pair[2])
-            put!(c, NodePair(s1, s2))
-        end
+    vec = Vector{NodePair}(undef, 0)
+
+    for i in [3, 5, 7]
+        add_node_pair(vec, i, i-1)
+        add_node_pair(vec, i, i+1)
     end
+    # corner case
+    add_node_pair(vec, 1, 7)
+    add_node_pair(vec, 1, 2)
+    return vec
 end
