@@ -133,7 +133,7 @@ function compute_shortest_path(dstar::DstarSearch; debug_visual=false)
         else
             s.g = Inf
             (update_state(s_) for s_ in neighbouring_nodes(dstar, s))
-            update_state(s)
+            update_state(dstar, s)
         end
         debug_visual && visualize(dstar)
     end
