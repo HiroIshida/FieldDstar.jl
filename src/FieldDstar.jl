@@ -26,8 +26,10 @@ mutable struct Node
     g::Float64
     rhs::Float64
     idx::Index
+    is_visited::Bool
 end
-Node(idx::Index) = Node(Inf, 0, idx)
+Node(idx::Index) = Node(idx, false)
+Node(idx::Index, is_visited::Bool) = Node(Inf, 0, idx, is_visited)
 
 function euclidean_distance(node1::Node, node2::Node)
     x1, y1 = node1.idx.x, node1.idx.y
@@ -104,6 +106,11 @@ function DstarSearch(idx_start::Index, idx_goal::Index, pgrid::PointGrid)
     return DstarSearch(s_start, s_goal, open_list, nodes, pgrid)
 end
 
+function DataStructures.enqueue!(dstar::DstarSearch, key::Node, val::KeyVal)
+    key.is_visited = true;
+    enqueue!(dstar.open_list, key, val)
+end
+
 function neighbouring_nodes(dstar::DstarSearch, node::Node)
     Channel() do c # like a python generator
         for idx_neigh in neighbouring_indexes(dstar.pgrid, node.idx)
@@ -120,9 +127,11 @@ function compute_shortest_path(dstar::DstarSearch; debug_visual=false)
         return false
     end
 
+    itr = 0
+
     key = dstar.s_goal
     val = KeyVal(key, dstar.s_start, EuclideanHeuristic())
-    enqueue!(dstar.open_list, key, val)
+    enqueue!(dstar, key, val)
 
     while predicate_continue()
         s = dequeue!(dstar.open_list)
@@ -136,21 +145,22 @@ function compute_shortest_path(dstar::DstarSearch; debug_visual=false)
             (update_state(s_) for s_ in neighbouring_nodes(dstar, s))
             update_state(dstar, s)
         end
-        debug_visual && visualize(dstar)
+        debug_visual && visualize(dstar, s)
+        itr += 1
     end
+    return itr
 end
 
 function update_state(dstar::DstarSearch, s::Node)
+    !s.is_visited && (s.g = Inf)
     if s!= dstar.s_goal
-        #=
         nbrs = neighbouring_nodes(dstar, s)
         f(s_::Node) = euclidean_distance(s, s_) + s_.g
-        s.rhs = minimum(f(s_) for s_ in nbrs)
-        =#
+        #s.rhs = minimum(f(s_) for s_ in nbrs)
         s.rhs = minimum(compute_pair_ahead_rhs(s, pair) for pair in neighbouring_node_pairs(dstar, s))
     end
     haskey(dstar.open_list, s) && delete!(dstar.open_list, s)
-    s.g != s.rhs && enqueue!(dstar.open_list, s, KeyVal(s, dstar.s_start, EuclideanHeuristic()))
+    s.g != s.rhs && enqueue!(dstar, s, KeyVal(s, dstar.s_start, EuclideanHeuristic()))
 end
 
 function extract_path(dstar::DstarSearch)
@@ -165,7 +175,7 @@ function extract_path(dstar::DstarSearch)
     return path
 end
 
-function visualize(dstar::DstarSearch)
+function visualize(dstar::DstarSearch, s::Node)
     gs = []
     for i in 1:dstar.pgrid.w
         for j in 1:dstar.pgrid.h
@@ -173,6 +183,10 @@ function visualize(dstar::DstarSearch)
                 push!(gs, 0.0)
             else
                 push!(gs, dstar.nodes[i][j].g)
+            end
+
+            if i==s.idx.x && j==s.idx.y
+                gs[end] = 0.0
             end
         end
     end
