@@ -1,3 +1,24 @@
+struct NodePair 
+    s_mid::Node
+    s_tip::Node
+end
+
+function compute_pair_ahead_rhs(s::Node, pair::NodePair)
+    g1 = pair.s_mid.g
+    g2 = pair.s_tip.g
+    cost1 = g1 + 1.0
+    cost2 = g2 + sqrt(2.0)
+
+    ((g1 == Inf) && (g2 == Inf)) && (return Inf)
+    G = g2 - g1
+    1 <= G && (return g1 + 1.0)
+    1 <= -G && (return g2 + sqrt(2))
+
+    t = clamp(sqrt(G^2 / (1 - G^2)), 0., 1.)
+    val = sqrt(1 + t^2) + t * g1 + (1 - t) * g2
+    return val
+end
+
 function neighbouring_index_pairs(pg::PointGrid, idx::Index)
     x_min = max(idx.x-1, 1)
     x_max = min(idx.x+1, pg.w)
@@ -41,12 +62,7 @@ function neighbouring_node_pairs(dstar::DstarSearch, node::Node)
         for idx_pair in neighbouring_index_pairs(dstar.pgrid, node.idx)
             s1 = get_node(dstar, idx_pair[1])
             s2 = get_node(dstar, idx_pair[2])
-            put!(c, (s1, s2))
+            put!(c, NodePair(s1, s2))
         end
     end
 end
-
-function copmute_pair_rhs(dstar::DstarSearch, pair::Tuple{Node, 2})
-end
-
-

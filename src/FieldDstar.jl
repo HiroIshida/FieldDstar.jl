@@ -29,9 +29,9 @@ mutable struct Node
 end
 Node(idx::Index) = Node(Inf, 0, idx)
 
-function euclidean_distance(s1::Node, s2::Node)
-    x1, y1 = s1.idx.x, s1.idx.y
-    x2, y2 = s2.idx.x, s2.idx.y
+function euclidean_distance(node1::Node, node2::Node)
+    x1, y1 = node1.idx.x, node1.idx.y
+    x2, y2 = node2.idx.x, node2.idx.y
     return sqrt((x1 - x2)^2 + (y1 - y2)^2)
 end
 
@@ -141,9 +141,12 @@ end
 
 function update_state(dstar::DstarSearch, s::Node)
     if s!= dstar.s_goal
+        #=
         nbrs = neighbouring_nodes(dstar, s)
         f(s_::Node) = euclidean_distance(s, s_) + s_.g
         s.rhs = minimum(f(s_) for s_ in nbrs)
+        =#
+        s.rhs = minimum(compute_pair_ahead_rhs(s, pair) for pair in neighbouring_node_pairs(dstar, s))
     end
     haskey(dstar.open_list, s) && delete!(dstar.open_list, s)
     s.g != s.rhs && enqueue!(dstar.open_list, s, KeyVal(s, dstar.s_start, EuclideanHeuristic()))
