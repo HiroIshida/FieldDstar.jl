@@ -7,7 +7,7 @@ using Plots
 gr()
 
 export PointGrid, Node, DstarSearch, Index, compute_shortest_path
-export get_node, neighbouring_nodes, visualize
+export get_node, neighbouring_nodes, visualize, extract_path
 
 
 macro debugassert(test)
@@ -63,19 +63,11 @@ end
 mutable struct PointGrid
     w::Int
     h::Int
+    pred_coll::Function
 end
 
-function PointGrid(w::Int, h::Int)
-    return PointGrid(nodes, w, h)
-end
-
-function collide(idx::Index)
-    if 10 < idx.x && idx.x < 20
-        if 10 < idx.y && idx.y < 20
-            return true
-        end
-    end
-    return false
+function PointGrid(w::Int, h::Int, pred_coll::Function)
+    return PointGrid(nodes, w, h, pred_coll)
 end
 
 function neighbouring_indexes(pg::PointGrid, idx::Index)
@@ -88,7 +80,7 @@ function neighbouring_indexes(pg::PointGrid, idx::Index)
         for i in max(idx.x-1, 1):min(idx.x+1, pg.w)
             for j in max(idx.y-1, 1):min(idx.y+1, pg.h)
                 (i==idx.x && j==idx.y) && continue
-                collide(Index(i, j)) && continue
+                pg.pred_coll(Index(i, j)) && continue
                 put!(c, Index(i, j))
             end
         end
@@ -157,6 +149,18 @@ function update_state(dstar::DstarSearch, s::Node)
     s.g != s.rhs && enqueue!(dstar.open_list, s, KeyVal(s, dstar.s_start, EuclideanHeuristic()))
 end
 
+function extract_path(dstar::DstarSearch)
+    path = Vector{Node}(undef, 0)
+    s = dstar.s_start
+    push!(path, s)
+    while s!=dstar.s_goal
+        nodes = collect(neighbouring_nodes(dstar, s))
+        s = nodes[argmin([s.g for s in nodes])]
+        push!(path, s)
+    end
+    return path
+end
+
 function visualize(dstar::DstarSearch)
     gs = []
     for i in 1:dstar.pgrid.w
@@ -173,4 +177,4 @@ function visualize(dstar::DstarSearch)
     GR.heatmap(xs, ys, reshape(gs, dstar.pgrid.w, dstar.pgrid.h))
 end
 
-end # module
+end
