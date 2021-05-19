@@ -177,4 +177,6 @@ function visualize(dstar::DstarSearch)
     GR.heatmap(xs, ys, reshape(gs, dstar.pgrid.w, dstar.pgrid.h))
 end
 
+include("piece_wise.jl")
+
 end
