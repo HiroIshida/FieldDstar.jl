@@ -112,11 +112,23 @@ function DataStructures.enqueue!(dstar::DstarSearch, key::Node, val::KeyVal)
 end
 
 function neighbouring_nodes(dstar::DstarSearch, node::Node)
-    Channel() do c # like a python generator
-        for idx_neigh in neighbouring_indexes(dstar.pgrid, node.idx)
-            put!(c, get_node(dstar, idx_neigh))
+    idx = node.idx
+    pg = dstar.pgrid
+    @debugassert idx.x > 0
+    @debugassert idx.y > 0
+    @debugassert idx.x <= pg.w
+    @debugassert idx.y <= pg.h
+
+    vec = Vector{Node}(undef, 0)
+    for i in max(idx.x-1, 1):min(idx.x+1, pg.w)
+        for j in max(idx.y-1, 1):min(idx.y+1, pg.h)
+            (i==idx.x && j==idx.y) && continue
+            pg.pred_coll(Index(i, j)) && continue
+            node = get_node(dstar, Index(i, j))
+            push!(vec, node)
         end
     end
+    return vec
 end
 
 function compute_shortest_path(dstar::DstarSearch; debug_visual=false)
