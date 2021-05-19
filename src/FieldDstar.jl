@@ -101,9 +101,6 @@ function DstarSearch(idx_start::Index, idx_goal::Index, pgrid::PointGrid)
     open_list = PriorityQueue{Node, KeyVal}()
     s_start = nodes[idx_start.x][idx_start.y]
     s_goal = nodes[idx_goal.x][idx_goal.y]
-    key = nodes[idx_goal.x][idx_goal.y]
-    val = KeyVal(key, s_start, EuclideanHeuristic())
-    enqueue!(open_list, key, val)
     return DstarSearch(s_start, s_goal, open_list, nodes, pgrid)
 end
 
@@ -122,6 +119,10 @@ function compute_shortest_path(dstar::DstarSearch; debug_visual=false)
         s_start.g != s_start.rhs && (return true)
         return false
     end
+
+    key = dstar.s_goal
+    val = KeyVal(key, dstar.s_start, EuclideanHeuristic())
+    enqueue!(dstar.open_list, key, val)
 
     while predicate_continue()
         s = dequeue!(dstar.open_list)
