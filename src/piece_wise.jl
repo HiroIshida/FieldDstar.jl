@@ -4,8 +4,8 @@ struct NodePair
 end
 
 function compute_pair_ahead_rhs(s::Node, pair::NodePair)
-    g1 = pair.s_mid.g
-    g2 = pair.s_tip.g
+    s1, s2 = pair.s_mid, pair.s_tip
+    g1, g2 = s1.g, s2.g
     cost1 = g1 + 1.0
     cost2 = g2 + sqrt(2.0)
 
@@ -13,14 +13,20 @@ function compute_pair_ahead_rhs(s::Node, pair::NodePair)
 
     f = g1 - g2
     if f<=0.0
-        return c + g1
+        float_idx = convert(Index{Float64}, s1.idx)
+        return c + g1, float_idx
     end
 
     if f < c
-        y = min(f/sqrt(c^2 - f^2), 1.0)
-        return c * sqrt(1 + y^2) + f * (1. - y) + g2
+        t = min(f/sqrt(c^2 - f^2), 1.0) # y in the paper
+        float_idx_x = s1.idx.x * t + s2.idx.x * (1. - t)
+        float_idx_y = s1.idx.y * t + s2.idx.y * (1. - t)
+        float_idx = Index{Float64}(float_idx_x, float_idx_y) 
+        return c * sqrt(1 + t^2) + f * (1. - t) + g2, float_idx
     end
-    return c * sqrt(2.0) + g2
+
+    float_idx = convert(Index{Float64}, s2.idx)
+    return c * sqrt(2.0) + g2, float_idx
 end
 
 function neighbouring_node_pairs(dstar::DstarSearch, node::Node)

@@ -22,6 +22,7 @@ struct Index{T}
     y::T
 end
 Index(x, y) = Index{Int}(x, y)
+convert(::Type{Index{Float64}}, idx::Index{<:Int}) = Index{Float64}(idx.x, idx.y)
 
 mutable struct Node
     g::Float64
@@ -154,7 +155,7 @@ function update_state(dstar::DstarSearch, s::Node)
         nbrs = neighbouring_nodes(dstar, s)
         f(s_::Node) = euclidean_distance(s, s_) + s_.g
         if dstar.is_field
-            s.rhs = minimum(compute_pair_ahead_rhs(s, pair) for pair in neighbouring_node_pairs(dstar, s))
+            s.rhs = minimum(compute_pair_ahead_rhs(s, pair)[1] for pair in neighbouring_node_pairs(dstar, s))
         else
             s.rhs = minimum(f(s_) for s_ in nbrs)
         end
@@ -164,15 +165,26 @@ function update_state(dstar::DstarSearch, s::Node)
 end
 
 function extract_path(dstar::DstarSearch)
-    path = Vector{Index{Int}}(undef, 0)
-    s = dstar.s_start
-    push!(path, s.idx)
-    while s!=dstar.s_goal
-        nodes = collect(neighbouring_nodes(dstar, s))
-        s = nodes[argmin([s.g for s in nodes])]
+    if dstar.is_field
+        #=
+        path = Vector{Index}(undef, 0)
+        s = dstar.s_start
         push!(path, s.idx)
+        while s!=dstar.s_goal
+            pairs = neighbouring_node_pairs(dstar, s)
+        end
+        =#
+    else
+        path = Vector{Index{Int}}(undef, 0)
+        s = dstar.s_start
+        push!(path, s.idx)
+        while s!=dstar.s_goal
+            nodes = collect(neighbouring_nodes(dstar, s))
+            s = nodes[argmin([s.g for s in nodes])]
+            push!(path, s.idx)
+        end
+        return path
     end
-    return path
 end
 
 function visualize(dstar::DstarSearch, s::Node)
