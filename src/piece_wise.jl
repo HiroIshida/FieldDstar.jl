@@ -57,13 +57,63 @@ function neighbouring_node_pairs(dstar::DstarSearch, node::Node)
 
     S = [s1, s2, s3, s4, s5, s6, s7, s8]
     valid_bools = [inRange(idx) & !pg.pred_coll(idx) for idx in S]
-    is_valid_pair = (i, j) -> (valid_bools[i] & valid_bools[j])
 
     function add_node_pair(vec::Vector{NodePair}, i, j)
         is_valid_pair = valid_bools[i] & valid_bools[j]
         if is_valid_pair
             node1 = get_node(dstar, S[i])
             node2 = get_node(dstar, S[j])
+            push!(vec, NodePair(node1, node2))
+        end
+    end
+
+    vec = Vector{NodePair}(undef, 0)
+
+    for i in [3, 5, 7]
+        add_node_pair(vec, i, i-1)
+        add_node_pair(vec, i, i+1)
+    end
+    # corner case
+    add_node_pair(vec, 1, 7)
+    add_node_pair(vec, 1, 2)
+    return vec
+end
+
+function neighbouring_node_pairs(dstar::DstarSearch, idx::Index{Float64})
+    # TODO super inefficient!
+    # duplicate 
+    idxes = Index{Int}[]
+    if idx.x - round(idx.x) == 0
+        i = round(idx.x)
+        j_low = floor(idx.y) 
+        j_high = ceil(idx.y)
+        idx1 = Index(i+0, j_low)
+        idx2 = Index(i+1, j_low)
+        idx3 = Index(i+1, j_high)
+        idx4 = Index(i+0, j_high)
+        idx5 = Index(i-1, j_high)
+        idx6 = Index(i-1, j_low)
+        idxes = [idx1, idx2, idx3, idx4, idx5, idx6]
+    else
+        j = round(idx.y)
+        i_low = floor(idx.x) 
+        i_high = ceil(idx.x)
+        idx1 = Index(i_high, j+0)
+        idx2 = Index(i_high, j+1)
+        idx3 = Index(i_low, j+1)
+        idx4 = Index(i_low, j+0)
+        idx5 = Index(i_low, j-1)
+        idx6 = Index(i_high, j-1)
+        idxes = [idx1, idx2, idx3, idx4, idx5, idx6]
+    end
+
+    valid_bools = [inRange(idx) & !pg.pred_coll(idx) for idx in idxes]
+
+    function add_node_pair(vec::Vector{NodePair}, i, j)
+        is_valid_pair = valid_bools[i] & valid_bools[j]
+        if is_valid_pair
+            node1 = get_node(dstar, idxes[i])
+            node2 = get_node(dstar, idxes[j])
             push!(vec, NodePair(node1, node2))
         end
     end
