@@ -9,14 +9,18 @@ function compute_pair_ahead_rhs(s::Node, pair::NodePair)
     cost1 = g1 + 1.0
     cost2 = g2 + sqrt(2.0)
 
-    ((g1 == Inf) && (g2 == Inf)) && (return Inf)
-    G = g2 - g1
-    1 <= G && (return g1 + 1.0)
-    1 <= -G && (return g2 + sqrt(2))
+    c = 1.0
 
-    t = clamp(sqrt(G^2 / (1 - G^2)), 0., 1.)
-    val = sqrt(1 + t^2) + t * g1 + (1 - t) * g2
-    return val
+    f = g1 - g2
+    if f<=0.0
+        return c + g1
+    end
+
+    if f < c
+        y = min(f/sqrt(c^2 - f^2), 1.0)
+        return c * sqrt(1 + y^2) + f * (1. - y) + g2
+    end
+    return c * sqrt(2.0) + g2
 end
 
 function neighbouring_index_pairs(pg::PointGrid, idx::Index)
