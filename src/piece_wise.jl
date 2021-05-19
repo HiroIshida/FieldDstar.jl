@@ -3,7 +3,7 @@ struct NodePair
     s_tip::Node
 end
 
-function compute_pair_ahead_rhs(s::Node, pair::NodePair)
+function compute_pair_ahead_rhs(pair::NodePair)
     s1, s2 = pair.s_mid, pair.s_tip
     g1, g2 = s1.g, s2.g
     cost1 = g1 + 1.0

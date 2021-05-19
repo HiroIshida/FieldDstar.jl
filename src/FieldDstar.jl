@@ -155,7 +155,7 @@ function update_state(dstar::DstarSearch, s::Node)
         nbrs = neighbouring_nodes(dstar, s)
         f(s_::Node) = euclidean_distance(s, s_) + s_.g
         if dstar.is_field
-            s.rhs = minimum(compute_pair_ahead_rhs(s, pair)[1] for pair in neighbouring_node_pairs(dstar, s))
+            s.rhs = minimum(compute_pair_ahead_rhs(pair)[1] for pair in neighbouring_node_pairs(dstar, s))
         else
             s.rhs = minimum(f(s_) for s_ in nbrs)
         end
@@ -166,14 +166,30 @@ end
 
 function extract_path(dstar::DstarSearch)
     if dstar.is_field
-        #=
-        path = Vector{Index}(undef, 0)
-        s = dstar.s_start
-        push!(path, s.idx)
-        while s!=dstar.s_goal
-            pairs = neighbouring_node_pairs(dstar, s)
+        function backtrack(idx::Index{Int})
+            node = get_node(dstar, idx)
+            cost_min = Inf
+            float_idx_best = nothing
+            for pair in neighbouring_node_pairs(dstar, node)
+                cost, float_idx = compute_pair_ahead_rhs(pair)
+                if cost < cost_min
+                    float_idx_best = float_idx
+                    cost_min = cost
+                end
+            end
+            return float_idx_best
         end
-        =#
+
+        function backtrack(idx::Index{Float64})
+            error("not supported")
+        end
+
+        path = Vector{Index}(undef, 0)
+        idx = dstar.s_start.idx
+        push!(path, idx)
+        while idx!=dstar.s_goal.idx
+            idx = backtrack(idx)
+        end
     else
         path = Vector{Index{Int}}(undef, 0)
         s = dstar.s_start
