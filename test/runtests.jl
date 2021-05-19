@@ -10,24 +10,24 @@ function pred_coll(idx::Index)
     return false
 end
 map = PointGrid(30, 30, pred_coll)
-
+dstar = DstarSearch(Index(1, 1), Index(27, 27), map; is_field=false)
+field_dstar = DstarSearch(Index(1, 1), Index(27, 27), map; is_field=true)
 
 @testset "neighbouring pairs" begin
-    pairs = collect(FieldDstar.neighbouring_index_pairs(map, Index(1, 1)))
+    pairs = collect(FieldDstar.neighbouring_node_pairs(dstar, get_node(dstar, Index(1, 1))))
     @test length(pairs) == 2
 
-    pairs = collect(FieldDstar.neighbouring_index_pairs(map, Index(10, 10)))
+    pairs = collect(FieldDstar.neighbouring_node_pairs(dstar, get_node(dstar, Index(10, 10))))
     @test length(pairs) == 6
 
-    pairs = collect(FieldDstar.neighbouring_index_pairs(map, Index(10, 12)))
+    pairs = collect(FieldDstar.neighbouring_node_pairs(dstar, get_node(dstar, Index(10, 12))))
     @test length(pairs) == 4
 
-    pairs = collect(FieldDstar.neighbouring_index_pairs(map, Index(14, 14)))
+    pairs = collect(FieldDstar.neighbouring_node_pairs(dstar, get_node(dstar, Index(14, 14))))
     @test length(pairs) == 0
 end
 
 @testset "planning" begin
-    dstar = DstarSearch(Index(1, 1), Index(27, 27), map)
     open_list = dstar.open_list
     compute_shortest_path(dstar, debug_visual=false)
     path = extract_path(dstar)
