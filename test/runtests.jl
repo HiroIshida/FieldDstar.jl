@@ -28,10 +28,12 @@ field_dstar = DstarSearch(Index(1, 1), Index(27, 27), map; is_field=true)
 end
 
 @testset "planning" begin
-    open_list = dstar.open_list
-    compute_shortest_path(dstar, debug_visual=false)
-    path = extract_path(dstar)
-    @test path[1] == dstar.s_start
-    @test path[end] == dstar.s_goal
-    @test all(!pred_coll(s.idx) for s in path)
+    for planner in  [dstar, field_dstar]
+        open_list = planner.open_list
+        compute_shortest_path(planner, debug_visual=false)
+        path = extract_path(planner)
+        @test path[1] == planner.s_start
+        @test path[end] == planner.s_goal
+        @test all(!pred_coll(s.idx) for s in path)
+    end
 end

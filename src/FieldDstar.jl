@@ -72,38 +72,22 @@ function PointGrid(w::Int, h::Int, pred_coll::Function)
     return PointGrid(nodes, w, h, pred_coll)
 end
 
-function neighbouring_indexes(pg::PointGrid, idx::Index)
-    @debugassert idx.x > 0
-    @debugassert idx.y > 0
-    @debugassert idx.x <= pg.w
-    @debugassert idx.y <= pg.h
-
-    Channel() do c # like python's generator
-        for i in max(idx.x-1, 1):min(idx.x+1, pg.w)
-            for j in max(idx.y-1, 1):min(idx.y+1, pg.h)
-                (i==idx.x && j==idx.y) && continue
-                pg.pred_coll(Index(i, j)) && continue
-                put!(c, Index(i, j))
-            end
-        end
-    end
-end
-
 mutable struct DstarSearch 
     s_start::Node
     s_goal::Node
     open_list::PriorityQueue{Node, KeyVal}
     nodes::Vector{Vector{Node}}
     pgrid::PointGrid
+    is_field::Bool
 end
 @inline get_node(dstar::DstarSearch, idx::Index) = dstar.nodes[idx.x][idx.y]
 
-function DstarSearch(idx_start::Index, idx_goal::Index, pgrid::PointGrid)
+function DstarSearch(idx_start::Index, idx_goal::Index, pgrid::PointGrid; is_field=true)
     nodes = [[Node(Index(i, j)) for j in 1:pgrid.h] for i in 1:pgrid.w]
     open_list = PriorityQueue{Node, KeyVal}()
     s_start = nodes[idx_start.x][idx_start.y]
     s_goal = nodes[idx_goal.x][idx_goal.y]
-    return DstarSearch(s_start, s_goal, open_list, nodes, pgrid)
+    return DstarSearch(s_start, s_goal, open_list, nodes, pgrid, is_field)
 end
 
 function DataStructures.enqueue!(dstar::DstarSearch, key::Node, val::KeyVal)
@@ -168,8 +152,11 @@ function update_state(dstar::DstarSearch, s::Node)
     if s!= dstar.s_goal
         nbrs = neighbouring_nodes(dstar, s)
         f(s_::Node) = euclidean_distance(s, s_) + s_.g
-        #s.rhs = minimum(f(s_) for s_ in nbrs)
-        s.rhs = minimum(compute_pair_ahead_rhs(s, pair) for pair in neighbouring_node_pairs(dstar, s))
+        if dstar.is_field
+            s.rhs = minimum(compute_pair_ahead_rhs(s, pair) for pair in neighbouring_node_pairs(dstar, s))
+        else
+            s.rhs = minimum(f(s_) for s_ in nbrs)
+        end
     end
     haskey(dstar.open_list, s) && delete!(dstar.open_list, s)
     s.g != s.rhs && enqueue!(dstar, s, KeyVal(s, dstar.s_start, EuclideanHeuristic()))
