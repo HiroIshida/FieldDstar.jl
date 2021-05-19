@@ -17,19 +17,20 @@ macro debugassert(test)
 end
 debugging() = false
 
-struct Index
-    x::Int
-    y::Int
+struct Index{T}
+    x::T
+    y::T
 end
+Index(x, y) = Index{Int}(x, y)
 
 mutable struct Node
     g::Float64
     rhs::Float64
-    idx::Index
+    idx::Index{Int}
     is_visited::Bool
 end
-Node(idx::Index) = Node(idx, false)
-Node(idx::Index, is_visited::Bool) = Node(Inf, 0, idx, is_visited)
+Node(idx::Index{Int}) = Node(idx, false)
+Node(idx::Index{Int}, is_visited::Bool) = Node(Inf, 0, idx, is_visited)
 
 function euclidean_distance(node1::Node, node2::Node)
     x1, y1 = node1.idx.x, node1.idx.y
@@ -80,9 +81,9 @@ mutable struct DstarSearch
     pgrid::PointGrid
     is_field::Bool
 end
-@inline get_node(dstar::DstarSearch, idx::Index) = dstar.nodes[idx.x][idx.y]
+@inline get_node(dstar::DstarSearch, idx::Index{Int}) = dstar.nodes[idx.x][idx.y]
 
-function DstarSearch(idx_start::Index, idx_goal::Index, pgrid::PointGrid; is_field=true)
+function DstarSearch(idx_start::Index{Int}, idx_goal::Index{Int}, pgrid::PointGrid; is_field=true)
     nodes = [[Node(Index(i, j)) for j in 1:pgrid.h] for i in 1:pgrid.w]
     open_list = PriorityQueue{Node, KeyVal}()
     s_start = nodes[idx_start.x][idx_start.y]
@@ -108,7 +109,7 @@ function neighbouring_nodes(dstar::DstarSearch, node::Node)
         for j in max(idx.y-1, 1):min(idx.y+1, pg.h)
             (i==idx.x && j==idx.y) && continue
             pg.pred_coll(Index(i, j)) && continue
-            node = get_node(dstar, Index(i, j))
+            node = get_node(dstar, Index{Int}(i, j))
             push!(vec, node)
         end
     end
