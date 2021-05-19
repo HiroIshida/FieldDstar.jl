@@ -164,13 +164,13 @@ function update_state(dstar::DstarSearch, s::Node)
 end
 
 function extract_path(dstar::DstarSearch)
-    path = Vector{Node}(undef, 0)
+    path = Vector{Index{Int}}(undef, 0)
     s = dstar.s_start
-    push!(path, s)
+    push!(path, s.idx)
     while s!=dstar.s_goal
         nodes = collect(neighbouring_nodes(dstar, s))
         s = nodes[argmin([s.g for s in nodes])]
-        push!(path, s)
+        push!(path, s.idx)
     end
     return path
 end

@@ -32,8 +32,8 @@ end
         open_list = planner.open_list
         compute_shortest_path(planner, debug_visual=false)
         path = extract_path(planner)
-        @test path[1] == planner.s_start
-        @test path[end] == planner.s_goal
-        @test all(!pred_coll(s.idx) for s in path)
+        @test path[1] == planner.s_start.idx
+        @test path[end] == planner.s_goal.idx
+        @test all(!pred_coll(idx) for idx in path)
     end
 end
